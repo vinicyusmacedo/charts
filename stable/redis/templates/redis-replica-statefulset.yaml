@@ -92,9 +92,9 @@ spec:
             password_aux=`cat ${REDIS_PASSWORD_FILE}`
             export REDIS_PASSWORD=$password_aux
           fi
-          if [[ -n $REDIS_MASTER_PASSWORD_FILE ]]; then
-            password_aux=`cat ${REDIS_MASTER_PASSWORD_FILE}`
-            export REDIS_MASTER_PASSWORD=$password_aux
+          if [[ -n $REDIS_PRIMARY_PASSWORD_FILE ]]; then
+            password_aux=`cat ${REDIS_PRIMARY_PASSWORD_FILE}`
+            export REDIS_PRIMARY_PASSWORD=$password_aux
           fi
           if [[ ! -f /opt/bitnami/redis/etc/replica.conf ]];then
             cp /opt/bitnami/redis/mounted-etc/replica.conf /opt/bitnami/redis/etc/replica.conf
@@ -103,10 +103,10 @@ spec:
             cp /opt/bitnami/redis/mounted-etc/redis.conf /opt/bitnami/redis/etc/redis.conf
           fi
           ARGS=("--port" "${REDIS_PORT}")
-          ARGS+=("--replicaof" "${REDIS_MASTER_HOST}" "${REDIS_MASTER_PORT_NUMBER}")
+          ARGS+=("--replicaof" "${REDIS_PRIMARY_HOST}" "${REDIS_PRIMARY_PORT_NUMBER}")
           {{- if .Values.usePassword }}
           ARGS+=("--requirepass" "${REDIS_PASSWORD}")
-          ARGS+=("--primaryauth" "${REDIS_MASTER_PASSWORD}")
+          ARGS+=("--primaryauth" "${REDIS_PRIMARY_PASSWORD}")
           {{- else }}
           ARGS+=("--protected-mode" "no")
           {{- end }}
@@ -125,17 +125,17 @@ spec:
         env:
         - name: REDIS_REPLICATION_MODE
           value: replica
-        - name: REDIS_MASTER_HOST
+        - name: REDIS_PRIMARY_HOST
           value: {{ template "redis.fullname" . }}-primary-0.{{ template "redis.fullname" . }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
         - name: REDIS_PORT
           value: {{ .Values.redisPort | quote }}
-        - name: REDIS_MASTER_PORT_NUMBER
+        - name: REDIS_PRIMARY_PORT_NUMBER
           value: {{ .Values.redisPort | quote }}
         {{- if .Values.usePassword }}
         {{- if .Values.usePasswordFile }}
         - name: REDIS_PASSWORD_FILE
           value: "/opt/bitnami/redis/secrets/redis-password"
-        - name: REDIS_MASTER_PASSWORD_FILE
+        - name: REDIS_PRIMARY_PASSWORD_FILE
           value: "/opt/bitnami/redis/secrets/redis-password"
         {{- else }}
         - name: REDIS_PASSWORD
@@ -143,7 +143,7 @@ spec:
             secretKeyRef:
               name: {{ template "redis.secretName" . }}
               key: {{ template "redis.secretPasswordKey" . }}
-        - name: REDIS_MASTER_PASSWORD
+        - name: REDIS_PRIMARY_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ template "redis.secretName" . }}
