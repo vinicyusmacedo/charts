@@ -285,9 +285,9 @@ WARNING: Rolling tag detected ({{ .Values.sentinel.image.repository }}:{{ .Value
 {{- end -}}
 
 {{/*
-Return  the proper Storage Class for master
+Return  the proper Storage Class for primary
 */}}
-{{- define "redis.master.storageClass" -}}
+{{- define "redis.primary.storageClass" -}}
 {{/*
 Helm 2.11 supports the assignment of a value to a variable defined in a different scope,
 but Helm 2.9 and 2.10 does not support it, so we need to implement this if-else logic.
@@ -300,29 +300,29 @@ but Helm 2.9 and 2.10 does not support it, so we need to implement this if-else 
             {{- printf "storageClassName: %s" .Values.global.storageClass -}}
         {{- end -}}
     {{- else -}}
-        {{- if .Values.master.persistence.storageClass -}}
-              {{- if (eq "-" .Values.master.persistence.storageClass) -}}
+        {{- if .Values.primary.persistence.storageClass -}}
+              {{- if (eq "-" .Values.primary.persistence.storageClass) -}}
                   {{- printf "storageClassName: \"\"" -}}
               {{- else }}
-                  {{- printf "storageClassName: %s" .Values.master.persistence.storageClass -}}
+                  {{- printf "storageClassName: %s" .Values.primary.persistence.storageClass -}}
               {{- end -}}
         {{- end -}}
     {{- end -}}
 {{- else -}}
-    {{- if .Values.master.persistence.storageClass -}}
-        {{- if (eq "-" .Values.master.persistence.storageClass) -}}
+    {{- if .Values.primary.persistence.storageClass -}}
+        {{- if (eq "-" .Values.primary.persistence.storageClass) -}}
             {{- printf "storageClassName: \"\"" -}}
         {{- else }}
-            {{- printf "storageClassName: %s" .Values.master.persistence.storageClass -}}
+            {{- printf "storageClassName: %s" .Values.primary.persistence.storageClass -}}
         {{- end -}}
     {{- end -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Return  the proper Storage Class for slave
+Return  the proper Storage Class for replica
 */}}
-{{- define "redis.slave.storageClass" -}}
+{{- define "redis.replica.storageClass" -}}
 {{/*
 Helm 2.11 supports the assignment of a value to a variable defined in a different scope,
 but Helm 2.9 and 2.10 does not support it, so we need to implement this if-else logic.
@@ -335,20 +335,20 @@ but Helm 2.9 and 2.10 does not support it, so we need to implement this if-else 
             {{- printf "storageClassName: %s" .Values.global.storageClass -}}
         {{- end -}}
     {{- else -}}
-        {{- if .Values.slave.persistence.storageClass -}}
-              {{- if (eq "-" .Values.slave.persistence.storageClass) -}}
+        {{- if .Values.replica.persistence.storageClass -}}
+              {{- if (eq "-" .Values.replica.persistence.storageClass) -}}
                   {{- printf "storageClassName: \"\"" -}}
               {{- else }}
-                  {{- printf "storageClassName: %s" .Values.slave.persistence.storageClass -}}
+                  {{- printf "storageClassName: %s" .Values.replica.persistence.storageClass -}}
               {{- end -}}
         {{- end -}}
     {{- end -}}
 {{- else -}}
-    {{- if .Values.slave.persistence.storageClass -}}
-        {{- if (eq "-" .Values.slave.persistence.storageClass) -}}
+    {{- if .Values.replica.persistence.storageClass -}}
+        {{- if (eq "-" .Values.replica.persistence.storageClass) -}}
             {{- printf "storageClassName: \"\"" -}}
         {{- else }}
-            {{- printf "storageClassName: %s" .Values.slave.persistence.storageClass -}}
+            {{- printf "storageClassName: %s" .Values.replica.persistence.storageClass -}}
         {{- end -}}
     {{- end -}}
 {{- end -}}

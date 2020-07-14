@@ -87,8 +87,8 @@ The following table lists the configurable parameters of the Redis chart and the
 | `image.pullSecrets`                           | Specify docker-registry secret names as an array                                                                                                    | `nil`                                                   |
 | `nameOverride`                                | String to partially override redis.fullname template with a string (will prepend the release name)                                                  | `nil`                                                   |
 | `fullnameOverride`                            | String to fully override redis.fullname template with a string                                                                                      | `nil`                                                   |
-| `cluster.enabled`                             | Use master-slave topology                                                                                                                           | `true`                                                  |
-| `cluster.slaveCount`                          | Number of slaves                                                                                                                                    | `1`                                                     |
+| `cluster.enabled`                             | Use primary-replica topology                                                                                                                           | `true`                                                  |
+| `cluster.replicaCount`                          | Number of replicas                                                                                                                                    | `1`                                                     |
 | `existingSecret`                              | Name of existing secret object (for password authentication)                                                                                        | `nil`                                                   |
 | `existingSecretPasswordKey`                   | Name of key containing password to be retrieved from the existing secret                                                                            | `nil`                                                   |
 | `usePassword`                                 | Use password                                                                                                                                        | `true`                                                  |
@@ -100,10 +100,10 @@ The following table lists the configurable parameters of the Redis chart and the
 | `networkPolicy.allowExternal`                 | Don't require client label for connections                                                                                                          | `true`                                                  |
 | `networkPolicy.ingressNSMatchLabels`          | Allow connections from other namespaces                                                                                                            | `{}`                                                    |
 | `networkPolicy.ingressNSPodMatchLabels`       | For other namespaces match by pod labels and namespace labels                                                                                      | `{}`                                                    |
-| `securityContext.enabled`                     | Enable security context (both redis master and slave pods)                                                                                          | `true`                                                  |
-| `securityContext.fsGroup`                     | Group ID for the container (both redis master and slave pods)                                                                                       | `1001`                                                  |
-| `securityContext.runAsUser`                   | User ID for the container (both redis master and slave pods)                                                                                        | `1001`                                                  |
-| `securityContext.sysctls`                     | Set namespaced sysctls for the container (both redis master and slave pods)                                                                         | `nil`                                                   |
+| `securityContext.enabled`                     | Enable security context (both redis primary and replica pods)                                                                                          | `true`                                                  |
+| `securityContext.fsGroup`                     | Group ID for the container (both redis primary and replica pods)                                                                                       | `1001`                                                  |
+| `securityContext.runAsUser`                   | User ID for the container (both redis primary and replica pods)                                                                                        | `1001`                                                  |
+| `securityContext.sysctls`                     | Set namespaced sysctls for the container (both redis primary and replica pods)                                                                         | `nil`                                                   |
 | `serviceAccount.create`                       | Specifies whether a ServiceAccount should be created                                                                                                | `false`                                                 |
 | `serviceAccount.name`                         | The name of the ServiceAccount to create                                                                                                            | Generated using the fullname template                   |
 | `rbac.create`                                 | Specifies whether RBAC resources should be created                                                                                                  | `false`                                                 |
@@ -123,7 +123,7 @@ The following table lists the configurable parameters of the Redis chart and the
 | `metrics.serviceMonitor.interval`             | How frequently to scrape metrics (use by default, falling back to Prometheus' default)                                                              | `nil`                                                   |
 | `metrics.serviceMonitor.selector`             | Default to kube-prometheus install (CoreOS recommended), but should be set according to Prometheus install                                          | `{ prometheus: kube-prometheus }`                       |
 | `metrics.service.type`                        | Kubernetes Service type (redis metrics)                                                                                                             | `ClusterIP`                                             |
-| `metrics.service.annotations`                 | Annotations for the services to monitor  (redis master and redis slave service)                                                                     | {}                                                      |
+| `metrics.service.annotations`                 | Annotations for the services to monitor  (redis primary and redis replica service)                                                                     | {}                                                      |
 | `metrics.service.labels`                      | Additional labels for the metrics service                                                                                                           | {}                                                      |
 | `metrics.service.loadBalancerIP`              | loadBalancerIP if redis metrics service type is `LoadBalancer`                                                                                      | `nil`                                                   |
 | `metrics.priorityClassName`                   | Metrics exporter pod priorityClassName                                                                                                              | {}                                                      |
@@ -132,98 +132,98 @@ The following table lists the configurable parameters of the Redis chart and the
 | `metrics.prometheusRule.namespace`            | namespace where prometheusRules resource should be created                                                                                          | Same namespace as redis                                 |
 | `metrics.prometheusRule.rules`                | [rules](https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/) to be created, check values for an example.                      | `[]`                                                    |
 | `persistence.existingClaim`                   | Provide an existing PersistentVolumeClaim                                                                                                           | `nil`                                                   |
-| `master.persistence.enabled`                  | Use a PVC to persist data (master node)                                                                                                             | `true`                                                  |
-| `master.persistence.path`                     | Path to mount the volume at, to use other images                                                                                                    | `/data`                                                 |
-| `master.persistence.subPath`                  | Subdirectory of the volume to mount at                                                                                                              | `""`                                                    |
-| `master.persistence.storageClass`             | Storage class of backing PVC                                                                                                                        | `generic`                                               |
-| `master.persistence.accessModes`              | Persistent Volume Access Modes                                                                                                                      | `[ReadWriteOnce]`                                       |
-| `master.persistence.size`                     | Size of data volume                                                                                                                                 | `8Gi`                                                   |
-| `master.persistence.matchLabels`              | matchLabels persistent volume selector                                                                                                              | `{}`                                                    |
-| `master.persistence.matchExpressions`         | matchExpressions persistent volume selector                                                                                                         | `{}`                                                    |
-| `master.statefulset.updateStrategy`           | Update strategy for StatefulSet                                                                                                                     | onDelete                                                |
-| `master.statefulset.rollingUpdatePartition`   | Partition update strategy                                                                                                                           | `nil`                                                   |
-| `master.podLabels`                            | Additional labels for Redis master pod                                                                                                              | {}                                                      |
-| `master.podAnnotations`                       | Additional annotations for Redis master pod                                                                                                         | {}                                                      |
-| `redisPort`                                   | Redis port (in both master and slaves)                                                                                                              | `6379`                                                  |
-| `master.command`                              | Redis master entrypoint string. The command `redis-server` is executed if this is not provided.                                                     | `/run.sh`                                               |
-| `master.configmap`                            | Additional Redis configuration for the master nodes (this value is evaluated as a template)                                                         | `nil`                                                   |
-| `master.disableCommands`                      | Array of Redis commands to disable (master)                                                                                                         | `["FLUSHDB", "FLUSHALL"]`                               |
-| `master.extraFlags`                           | Redis master additional command line flags                                                                                                          | []                                                      |
-| `master.nodeSelector`                         | Redis master Node labels for pod assignment                                                                                                         | {"beta.kubernetes.io/arch": "amd64"}                    |
-| `master.tolerations`                          | Toleration labels for Redis master pod assignment                                                                                                   | []                                                      |
-| `master.affinity`                             | Affinity settings for Redis master pod assignment                                                                                                   | {}                                                      |
-| `master.schedulerName`                        | Name of an alternate scheduler                                                                                                                      | `nil`                                                   |
-| `master.service.type`                         | Kubernetes Service type (redis master)                                                                                                              | `ClusterIP`                                             |
-| `master.service.port`                         | Kubernetes Service port (redis master)                                                                                                              | `6379`                                                  |
-| `master.service.nodePort`                     | Kubernetes Service nodePort (redis master)                                                                                                          | `nil`                                                   |
-| `master.service.annotations`                  | annotations for redis master service                                                                                                                | {}                                                      |
-| `master.service.labels`                       | Additional labels for redis master service                                                                                                          | {}                                                      |
-| `master.service.loadBalancerIP`               | loadBalancerIP if redis master service type is `LoadBalancer`                                                                                       | `nil`                                                   |
-| `master.service.loadBalancerSourceRanges`     | loadBalancerSourceRanges if redis master service type is `LoadBalancer`                                                                             | `nil`                                                   |
-| `master.resources`                            | Redis master CPU/Memory resource requests/limits                                                                                                    | Memory: `256Mi`, CPU: `100m`                            |
-| `master.livenessProbe.enabled`                | Turn on and off liveness probe (redis master pod)                                                                                                   | `true`                                                  |
-| `master.livenessProbe.initialDelaySeconds`    | Delay before liveness probe is initiated (redis master pod)                                                                                         | `30`                                                    |
-| `master.livenessProbe.periodSeconds`          | How often to perform the probe (redis master pod)                                                                                                   | `30`                                                    |
-| `master.livenessProbe.timeoutSeconds`         | When the probe times out (redis master pod)                                                                                                         | `5`                                                     |
-| `master.livenessProbe.successThreshold`       | Minimum consecutive successes for the probe to be considered successful after having failed (redis master pod)                                      | `1`                                                     |
-| `master.livenessProbe.failureThreshold`       | Minimum consecutive failures for the probe to be considered failed after having succeeded.                                                          | `5`                                                     |
-| `master.readinessProbe.enabled`               | Turn on and off readiness probe (redis master pod)                                                                                                  | `true`                                                  |
-| `master.readinessProbe.initialDelaySeconds`   | Delay before readiness probe is initiated (redis master pod)                                                                                        | `5`                                                     |
-| `master.readinessProbe.periodSeconds`         | How often to perform the probe (redis master pod)                                                                                                   | `10`                                                    |
-| `master.readinessProbe.timeoutSeconds`        | When the probe times out (redis master pod)                                                                                                         | `1`                                                     |
-| `master.readinessProbe.successThreshold`      | Minimum consecutive successes for the probe to be considered successful after having failed (redis master pod)                                      | `1`                                                     |
-| `master.readinessProbe.failureThreshold`      | Minimum consecutive failures for the probe to be considered failed after having succeeded.                                                          | `5`                                                     |
-| `master.priorityClassName`                    | Redis Master pod priorityClassName                                                                                                                  | {}                                                      |
+| `primary.persistence.enabled`                  | Use a PVC to persist data (primary node)                                                                                                             | `true`                                                  |
+| `primary.persistence.path`                     | Path to mount the volume at, to use other images                                                                                                    | `/data`                                                 |
+| `primary.persistence.subPath`                  | Subdirectory of the volume to mount at                                                                                                              | `""`                                                    |
+| `primary.persistence.storageClass`             | Storage class of backing PVC                                                                                                                        | `generic`                                               |
+| `primary.persistence.accessModes`              | Persistent Volume Access Modes                                                                                                                      | `[ReadWriteOnce]`                                       |
+| `primary.persistence.size`                     | Size of data volume                                                                                                                                 | `8Gi`                                                   |
+| `primary.persistence.matchLabels`              | matchLabels persistent volume selector                                                                                                              | `{}`                                                    |
+| `primary.persistence.matchExpressions`         | matchExpressions persistent volume selector                                                                                                         | `{}`                                                    |
+| `primary.statefulset.updateStrategy`           | Update strategy for StatefulSet                                                                                                                     | onDelete                                                |
+| `primary.statefulset.rollingUpdatePartition`   | Partition update strategy                                                                                                                           | `nil`                                                   |
+| `primary.podLabels`                            | Additional labels for Redis primary pod                                                                                                              | {}                                                      |
+| `primary.podAnnotations`                       | Additional annotations for Redis primary pod                                                                                                         | {}                                                      |
+| `redisPort`                                   | Redis port (in both primary and replicas)                                                                                                              | `6379`                                                  |
+| `primary.command`                              | Redis primary entrypoint string. The command `redis-server` is executed if this is not provided.                                                     | `/run.sh`                                               |
+| `primary.configmap`                            | Additional Redis configuration for the primary nodes (this value is evaluated as a template)                                                         | `nil`                                                   |
+| `primary.disableCommands`                      | Array of Redis commands to disable (primary)                                                                                                         | `["FLUSHDB", "FLUSHALL"]`                               |
+| `primary.extraFlags`                           | Redis primary additional command line flags                                                                                                          | []                                                      |
+| `primary.nodeSelector`                         | Redis primary Node labels for pod assignment                                                                                                         | {"beta.kubernetes.io/arch": "amd64"}                    |
+| `primary.tolerations`                          | Toleration labels for Redis primary pod assignment                                                                                                   | []                                                      |
+| `primary.affinity`                             | Affinity settings for Redis primary pod assignment                                                                                                   | {}                                                      |
+| `primary.schedulerName`                        | Name of an alternate scheduler                                                                                                                      | `nil`                                                   |
+| `primary.service.type`                         | Kubernetes Service type (redis primary)                                                                                                              | `ClusterIP`                                             |
+| `primary.service.port`                         | Kubernetes Service port (redis primary)                                                                                                              | `6379`                                                  |
+| `primary.service.nodePort`                     | Kubernetes Service nodePort (redis primary)                                                                                                          | `nil`                                                   |
+| `primary.service.annotations`                  | annotations for redis primary service                                                                                                                | {}                                                      |
+| `primary.service.labels`                       | Additional labels for redis primary service                                                                                                          | {}                                                      |
+| `primary.service.loadBalancerIP`               | loadBalancerIP if redis primary service type is `LoadBalancer`                                                                                       | `nil`                                                   |
+| `primary.service.loadBalancerSourceRanges`     | loadBalancerSourceRanges if redis primary service type is `LoadBalancer`                                                                             | `nil`                                                   |
+| `primary.resources`                            | Redis primary CPU/Memory resource requests/limits                                                                                                    | Memory: `256Mi`, CPU: `100m`                            |
+| `primary.livenessProbe.enabled`                | Turn on and off liveness probe (redis primary pod)                                                                                                   | `true`                                                  |
+| `primary.livenessProbe.initialDelaySeconds`    | Delay before liveness probe is initiated (redis primary pod)                                                                                         | `30`                                                    |
+| `primary.livenessProbe.periodSeconds`          | How often to perform the probe (redis primary pod)                                                                                                   | `30`                                                    |
+| `primary.livenessProbe.timeoutSeconds`         | When the probe times out (redis primary pod)                                                                                                         | `5`                                                     |
+| `primary.livenessProbe.successThreshold`       | Minimum consecutive successes for the probe to be considered successful after having failed (redis primary pod)                                      | `1`                                                     |
+| `primary.livenessProbe.failureThreshold`       | Minimum consecutive failures for the probe to be considered failed after having succeeded.                                                          | `5`                                                     |
+| `primary.readinessProbe.enabled`               | Turn on and off readiness probe (redis primary pod)                                                                                                  | `true`                                                  |
+| `primary.readinessProbe.initialDelaySeconds`   | Delay before readiness probe is initiated (redis primary pod)                                                                                        | `5`                                                     |
+| `primary.readinessProbe.periodSeconds`         | How often to perform the probe (redis primary pod)                                                                                                   | `10`                                                    |
+| `primary.readinessProbe.timeoutSeconds`        | When the probe times out (redis primary pod)                                                                                                         | `1`                                                     |
+| `primary.readinessProbe.successThreshold`      | Minimum consecutive successes for the probe to be considered successful after having failed (redis primary pod)                                      | `1`                                                     |
+| `primary.readinessProbe.failureThreshold`      | Minimum consecutive failures for the probe to be considered failed after having succeeded.                                                          | `5`                                                     |
+| `primary.priorityClassName`                    | Redis Master pod priorityClassName                                                                                                                  | {}                                                      |
 | `volumePermissions.enabled`                   | Enable init container that changes volume permissions in the registry (for cases where the default k8s `runAsUser` and `fsUser` values do not work) | `false`                                                 |
 | `volumePermissions.image.registry`            | Init container volume-permissions image registry                                                                                                    | `docker.io`                                             |
 | `volumePermissions.image.repository`          | Init container volume-permissions image name                                                                                                        | `bitnami/minideb`                                       |
 | `volumePermissions.image.tag`                 | Init container volume-permissions image tag                                                                                                         | `buster`                                                |
 | `volumePermissions.image.pullPolicy`          | Init container volume-permissions image pull policy                                                                                                 | `Always`                                                |
 | `volumePermissions.resources       `          | Init container volume-permissions CPU/Memory resource requests/limits                                                                               | {}                                                      |
-| `slave.service.type`                          | Kubernetes Service type (redis slave)                                                                                                               | `ClusterIP`                                             |
-| `slave.service.nodePort`                      | Kubernetes Service nodePort (redis slave)                                                                                                           | `nil`                                                   |
-| `slave.service.annotations`                   | annotations for redis slave service                                                                                                                 | {}                                                      |
-| `slave.service.labels`                        | Additional labels for redis slave service                                                                                                           | {}                                                      |
-| `slave.service.port`                          | Kubernetes Service port (redis slave)                                                                                                               | `6379`                                                  |
-| `slave.service.loadBalancerIP`                | LoadBalancerIP if Redis slave service type is `LoadBalancer`                                                                                        | `nil`                                                   |
-| `slave.service.loadBalancerSourceRanges`      | loadBalancerSourceRanges if Redis slave service type is `LoadBalancer`                                                                              | `nil`                                                   |
-| `slave.command`                               | Redis slave entrypoint array. The docker image's ENTRYPOINT is used if this is not provided.                                                        | `/run.sh`                                               |
-| `slave.configmap`                             | Additional Redis configuration for the slave nodes (this value is evaluated as a template)                                                          | `nil`                                                   |
-| `slave.disableCommands`                       | Array of Redis commands to disable (slave)                                                                                                          | `[FLUSHDB, FLUSHALL]`                                   |
-| `slave.extraFlags`                            | Redis slave additional command line flags                                                                                                           | `[]`                                                    |
-| `slave.livenessProbe.enabled`                 | Turn on and off liveness probe (redis slave pod)                                                                                                    | `true`                                                  |
-| `slave.livenessProbe.initialDelaySeconds`     | Delay before liveness probe is initiated (redis slave pod)                                                                                          | `30`                                                    |
-| `slave.livenessProbe.periodSeconds`           | How often to perform the probe (redis slave pod)                                                                                                    | `10`                                                    |
-| `slave.livenessProbe.timeoutSeconds`          | When the probe times out (redis slave pod)                                                                                                          | `5`                                                     |
-| `slave.livenessProbe.successThreshold`        | Minimum consecutive successes for the probe to be considered successful after having failed (redis slave pod)                                       | `1`                                                     |
-| `slave.livenessProbe.failureThreshold`        | Minimum consecutive failures for the probe to be considered failed after having succeeded.                                                          | `5`                                                     |
-| `slave.readinessProbe.enabled`                | Turn on and off slave.readiness probe (redis slave pod)                                                                                             | `true`                                                  |
-| `slave.readinessProbe.initialDelaySeconds`    | Delay before slave.readiness probe is initiated (redis slave pod)                                                                                   | `5`                                                     |
-| `slave.readinessProbe.periodSeconds`          | How often to perform the probe (redis slave pod)                                                                                                    | `10`                                                    |
-| `slave.readinessProbe.timeoutSeconds`         | When the probe times out (redis slave pod)                                                                                                          | `10`                                                    |
-| `slave.readinessProbe.successThreshold`       | Minimum consecutive successes for the probe to be considered successful after having failed (redis slave pod)                                       | `1`                                                     |
-| `slave.readinessProbe.failureThreshold`       | Minimum consecutive failures for the probe to be considered failed after having succeeded. (redis slave pod)                                        | `5`                                                     |
-| `slave.persistence.enabled`                   | Use a PVC to persist data (slave node)                                                                                                              | `true`                                                  |
-| `slave.persistence.path`                      | Path to mount the volume at, to use other images                                                                                                    | `/data`                                                 |
-| `slave.persistence.subPath`                   | Subdirectory of the volume to mount at                                                                                                              | `""`                                                    |
-| `slave.persistence.storageClass`              | Storage class of backing PVC                                                                                                                        | `generic`                                               |
-| `slave.persistence.accessModes`               | Persistent Volume Access Modes                                                                                                                      | `[ReadWriteOnce]`                                       |
-| `slave.persistence.size`                      | Size of data volume                                                                                                                                 | `8Gi`                                                   |
-| `slave.persistence.matchLabels`               | matchLabels persistent volume selector                                                                                                              | `{}`                                                    |
-| `slave.persistence.matchExpressions`          | matchExpressions persistent volume selector                                                                                                         | `{}`                                                    |
-| `slave.statefulset.updateStrategy`            | Update strategy for StatefulSet                                                                                                                     | onDelete                                                |
-| `slave.statefulset.rollingUpdatePartition`    | Partition update strategy                                                                                                                           | `nil`                                                   |
-| `slave.podLabels`                             | Additional labels for Redis slave pod                                                                                                               | `master.podLabels`                                      |
-| `slave.podAnnotations`                        | Additional annotations for Redis slave pod                                                                                                          | `master.podAnnotations`                                 |
-| `slave.schedulerName`                         | Name of an alternate scheduler                                                                                                                      | `nil`                                                   |
-| `slave.resources`                             | Redis slave CPU/Memory resource requests/limits                                                                                                     | `{}`                                                    |
-| `slave.affinity`                              | Enable node/pod affinity for slaves                                                                                                                 | {}                                                      |
-| `slave.priorityClassName`                     | Redis Slave pod priorityClassName                                                                                                                   | {}                                                      |
+| `replica.service.type`                          | Kubernetes Service type (redis replica)                                                                                                               | `ClusterIP`                                             |
+| `replica.service.nodePort`                      | Kubernetes Service nodePort (redis replica)                                                                                                           | `nil`                                                   |
+| `replica.service.annotations`                   | annotations for redis replica service                                                                                                                 | {}                                                      |
+| `replica.service.labels`                        | Additional labels for redis replica service                                                                                                           | {}                                                      |
+| `replica.service.port`                          | Kubernetes Service port (redis replica)                                                                                                               | `6379`                                                  |
+| `replica.service.loadBalancerIP`                | LoadBalancerIP if Redis replica service type is `LoadBalancer`                                                                                        | `nil`                                                   |
+| `replica.service.loadBalancerSourceRanges`      | loadBalancerSourceRanges if Redis replica service type is `LoadBalancer`                                                                              | `nil`                                                   |
+| `replica.command`                               | Redis replica entrypoint array. The docker image's ENTRYPOINT is used if this is not provided.                                                        | `/run.sh`                                               |
+| `replica.configmap`                             | Additional Redis configuration for the replica nodes (this value is evaluated as a template)                                                          | `nil`                                                   |
+| `replica.disableCommands`                       | Array of Redis commands to disable (replica)                                                                                                          | `[FLUSHDB, FLUSHALL]`                                   |
+| `replica.extraFlags`                            | Redis replica additional command line flags                                                                                                           | `[]`                                                    |
+| `replica.livenessProbe.enabled`                 | Turn on and off liveness probe (redis replica pod)                                                                                                    | `true`                                                  |
+| `replica.livenessProbe.initialDelaySeconds`     | Delay before liveness probe is initiated (redis replica pod)                                                                                          | `30`                                                    |
+| `replica.livenessProbe.periodSeconds`           | How often to perform the probe (redis replica pod)                                                                                                    | `10`                                                    |
+| `replica.livenessProbe.timeoutSeconds`          | When the probe times out (redis replica pod)                                                                                                          | `5`                                                     |
+| `replica.livenessProbe.successThreshold`        | Minimum consecutive successes for the probe to be considered successful after having failed (redis replica pod)                                       | `1`                                                     |
+| `replica.livenessProbe.failureThreshold`        | Minimum consecutive failures for the probe to be considered failed after having succeeded.                                                          | `5`                                                     |
+| `replica.readinessProbe.enabled`                | Turn on and off replica.readiness probe (redis replica pod)                                                                                             | `true`                                                  |
+| `replica.readinessProbe.initialDelaySeconds`    | Delay before replica.readiness probe is initiated (redis replica pod)                                                                                   | `5`                                                     |
+| `replica.readinessProbe.periodSeconds`          | How often to perform the probe (redis replica pod)                                                                                                    | `10`                                                    |
+| `replica.readinessProbe.timeoutSeconds`         | When the probe times out (redis replica pod)                                                                                                          | `10`                                                    |
+| `replica.readinessProbe.successThreshold`       | Minimum consecutive successes for the probe to be considered successful after having failed (redis replica pod)                                       | `1`                                                     |
+| `replica.readinessProbe.failureThreshold`       | Minimum consecutive failures for the probe to be considered failed after having succeeded. (redis replica pod)                                        | `5`                                                     |
+| `replica.persistence.enabled`                   | Use a PVC to persist data (replica node)                                                                                                              | `true`                                                  |
+| `replica.persistence.path`                      | Path to mount the volume at, to use other images                                                                                                    | `/data`                                                 |
+| `replica.persistence.subPath`                   | Subdirectory of the volume to mount at                                                                                                              | `""`                                                    |
+| `replica.persistence.storageClass`              | Storage class of backing PVC                                                                                                                        | `generic`                                               |
+| `replica.persistence.accessModes`               | Persistent Volume Access Modes                                                                                                                      | `[ReadWriteOnce]`                                       |
+| `replica.persistence.size`                      | Size of data volume                                                                                                                                 | `8Gi`                                                   |
+| `replica.persistence.matchLabels`               | matchLabels persistent volume selector                                                                                                              | `{}`                                                    |
+| `replica.persistence.matchExpressions`          | matchExpressions persistent volume selector                                                                                                         | `{}`                                                    |
+| `replica.statefulset.updateStrategy`            | Update strategy for StatefulSet                                                                                                                     | onDelete                                                |
+| `replica.statefulset.rollingUpdatePartition`    | Partition update strategy                                                                                                                           | `nil`                                                   |
+| `replica.podLabels`                             | Additional labels for Redis replica pod                                                                                                               | `primary.podLabels`                                      |
+| `replica.podAnnotations`                        | Additional annotations for Redis replica pod                                                                                                          | `primary.podAnnotations`                                 |
+| `replica.schedulerName`                         | Name of an alternate scheduler                                                                                                                      | `nil`                                                   |
+| `replica.resources`                             | Redis replica CPU/Memory resource requests/limits                                                                                                     | `{}`                                                    |
+| `replica.affinity`                              | Enable node/pod affinity for replicas                                                                                                                 | {}                                                      |
+| `replica.priorityClassName`                     | Redis Slave pod priorityClassName                                                                                                                   | {}                                                      |
 | `sentinel.enabled`                            | Enable sentinel containers                                                                                                                          | `false`                                                 |
 | `sentinel.usePassword`                        | Use password for sentinel containers                                                                                                      | `true`                                                  |
-| `sentinel.masterSet`                          | Name of the sentinel master set                                                                                                                     | `mymaster`                                              |
+| `sentinel.primarySet`                          | Name of the sentinel primary set                                                                                                                     | `myprimary`                                              |
 | `sentinel.initialCheckTimeout`                | Timeout for querying the redis sentinel service for the active sentinel list                                                                        | `5`                                                     |
-| `sentinel.quorum`                             | Quorum for electing a new master                                                                                                                    | `2`                                                     |
+| `sentinel.quorum`                             | Quorum for electing a new primary                                                                                                                    | `2`                                                     |
 | `sentinel.downAfterMilliseconds`              | Timeout for detecting a Redis node is down                                                                                                          | `60000`                                                 |
 | `sentinel.failoverTimeout`                    | Timeout for performing a election failover                                                                                                          | `18000`                                                 |
 | `sentinel.parallelSyncs`                      | Number of parallel syncs in the cluster                                                                                                             | `1`                                                     |
@@ -299,10 +299,10 @@ Bitnami will release a new chart updating its containers if a new version of the
 
 This chart includes a `values-production.yaml` file where you can find some parameters oriented to production configuration in comparison to the regular `values.yaml`. You can use this file instead of the default one.
 
-- Number of slaves:
+- Number of replicas:
 ```diff
-- cluster.slaveCount: 2
-+ cluster.slaveCount: 3
+- cluster.replicaCount: 2
++ cluster.replicaCount: 3
 ```
 
 - Enable NetworkPolicy:
@@ -321,27 +321,27 @@ This chart includes a `values-production.yaml` file where you can find some para
 
 #### Default: Master-Slave
 
-When installing the chart with `cluster.enabled=true`, it will deploy a Redis master StatefulSet (only one master node allowed) and a Redis slave StatefulSet. The slaves will be read-replicas of the master. Two services will be exposed:
+When installing the chart with `cluster.enabled=true`, it will deploy a Redis primary StatefulSet (only one primary node allowed) and a Redis replica StatefulSet. The replicas will be read-replicas of the primary. Two services will be exposed:
 
-   - Redis Master service: Points to the master, where read-write operations can be performed
-   - Redis Slave service: Points to the slaves, where only read operations are allowed.
+   - Redis Master service: Points to the primary, where read-write operations can be performed
+   - Redis Slave service: Points to the replicas, where only read operations are allowed.
 
-In case the master crashes, the slaves will wait until the master node is respawned again by the Kubernetes Controller Manager.
+In case the primary crashes, the replicas will wait until the primary node is respawned again by the Kubernetes Controller Manager.
 
 #### Master-Slave with Sentinel
 
-When installing the chart with `cluster.enabled=true` and `sentinel.enabled=true`, it will deploy a Redis master StatefulSet (only one master allowed) and a Redis slave StatefulSet. In this case, the pods will contain en extra container with Redis Sentinel. This container will form a cluster of Redis Sentinel nodes, which will promote a new master in case the actual one fails. In addition to this, only one service is exposed:
+When installing the chart with `cluster.enabled=true` and `sentinel.enabled=true`, it will deploy a Redis primary StatefulSet (only one primary allowed) and a Redis replica StatefulSet. In this case, the pods will contain en extra container with Redis Sentinel. This container will form a cluster of Redis Sentinel nodes, which will promote a new primary in case the actual one fails. In addition to this, only one service is exposed:
 
    - Redis service: Exposes port 6379 for Redis read-only operations and port 26379 for accesing Redis Sentinel.
 
-For read-only operations, access the service using port 6379. For write operations, it's necessary to access the Redis Sentinel cluster and query the current master using the command below (using redis-cli or similar:
+For read-only operations, access the service using port 6379. For write operations, it's necessary to access the Redis Sentinel cluster and query the current primary using the command below (using redis-cli or similar:
 
 ```
-SENTINEL get-master-addr-by-name <name of your MasterSet. Example: mymaster>
+SENTINEL get-primary-addr-by-name <name of your MasterSet. Example: myprimary>
 ```
-This command will return the address of the current master, which can be accessed from inside the cluster.
+This command will return the address of the current primary, which can be accessed from inside the cluster.
 
-In case the current master crashes, the Sentinel containers will elect a new master node.
+In case the current primary crashes, the Sentinel containers will elect a new primary node.
 
 ### Using password file
 To use a password file for Redis you need to create a secret containing the password.
@@ -360,7 +360,7 @@ metrics.enabled=true
 
 ### Metrics
 
-The chart optionally can start a metrics exporter for [prometheus](https://prometheus.io). The metrics endpoint (port 9121) is exposed in the service. Metrics can be scraped from within the cluster using something similar as the described in the [example Prometheus scrape configuration](https://github.com/prometheus/prometheus/blob/master/documentation/examples/prometheus-kubernetes.yml). If metrics are to be scraped from outside the cluster, the Kubernetes API proxy can be utilized to access the endpoint.
+The chart optionally can start a metrics exporter for [prometheus](https://prometheus.io). The metrics endpoint (port 9121) is exposed in the service. Metrics can be scraped from within the cluster using something similar as the described in the [example Prometheus scrape configuration](https://github.com/prometheus/prometheus/blob/primary/documentation/examples/prometheus-kubernetes.yml). If metrics are to be scraped from outside the cluster, the Kubernetes API proxy can be utilized to access the endpoint.
 
 ### Host Kernel Settings
 Redis may require some changes in the kernel of the host machine to work as expected, in particular increasing the `somaxconn` value and disabling transparent huge pages.
@@ -378,7 +378,7 @@ sysctlImage:
       echo never > /host-sys/kernel/mm/transparent_hugepage/enabled
 ```
 
-Alternatively, for Kubernetes 1.12+ you can set `securityContext.sysctls` which will configure sysctls for master and slave pods. Example:
+Alternatively, for Kubernetes 1.12+ you can set `securityContext.sysctls` which will configure sysctls for primary and replica pods. Example:
 
 ```yaml
 securityContext:
@@ -440,11 +440,11 @@ For releases with `usePassword: true`, the value `sentinel.usePassword` controls
 * Using a version of redis-sentinel prior to `5.0.1` where the authentication feature was introduced.
 * Where redis clients need to be updated to support sentinel authentication.
 
-If using a master/slave topology, or with `usePassword: false`, no action is required.
+If using a primary/replica topology, or with `usePassword: false`, no action is required.
 
 ### To 8.0.18
 
-For releases with `metrics.enabled: true` the default tag for the exporter image is now `v1.x.x`. This introduces many changes including metrics names. You'll want to use [this dashboard](https://github.com/oliver006/redis_exporter/blob/master/contrib/grafana_prometheus_redis_dashboard.json) now. Please see the [redis_exporter github page](https://github.com/oliver006/redis_exporter#upgrading-from-0x-to-1x) for more details.
+For releases with `metrics.enabled: true` the default tag for the exporter image is now `v1.x.x`. This introduces many changes including metrics names. You'll want to use [this dashboard](https://github.com/oliver006/redis_exporter/blob/primary/contrib/grafana_prometheus_redis_dashboard.json) now. Please see the [redis_exporter github page](https://github.com/oliver006/redis_exporter#upgrading-from-0x-to-1x) for more details.
 
 ### To 7.0.0
 
@@ -463,12 +463,12 @@ This version causes a change in the Redis Master StatefulSet definition, so the 
    helm install <RELEASE> stable/redis
    ```
 
-Previous versions of the chart were not using persistence in the slaves, so this upgrade would add it to them. Another important change is that no values are inherited from master to slaves. For example, in 6.0.0 `slaves.readinessProbe.periodSeconds`, if empty, would be set to `master.readinessProbe.periodSeconds`. This approach lacked transparency and was difficult to maintain. From now on, all the slave parameters must be configured just as it is done with the masters.
+Previous versions of the chart were not using persistence in the replicas, so this upgrade would add it to them. Another important change is that no values are inherited from primary to replicas. For example, in 6.0.0 `replicas.readinessProbe.periodSeconds`, if empty, would be set to `primary.readinessProbe.periodSeconds`. This approach lacked transparency and was difficult to maintain. From now on, all the replica parameters must be configured just as it is done with the primarys.
 
 Some values have changed as well:
 
-   - `master.port` and `slave.port` have been changed to `redisPort` (same value for both master and slaves)
-   - `master.securityContext` and `slave.securityContext` have been changed to `securityContext`(same values for both master and slaves)
+   - `primary.port` and `replica.port` have been changed to `redisPort` (same value for both primary and replicas)
+   - `primary.securityContext` and `replica.securityContext` have been changed to `securityContext`(same values for both primary and replicas)
 
 By default, the upgrade will not change the cluster topology. In case you want to use Redis Sentinel, you must explicitly set `sentinel.enabled` to `true`.
 
@@ -479,13 +479,13 @@ Previous versions of the chart were using an init-container to change the permis
 ### To 5.0.0
 
 The default image in this release may be switched out for any image containing the `redis-server`
-and `redis-cli` binaries. If `redis-server` is not the default image ENTRYPOINT, `master.command`
+and `redis-cli` binaries. If `redis-server` is not the default image ENTRYPOINT, `primary.command`
 must be specified.
 
 #### Breaking changes
-- `master.args` and `slave.args` are removed. Use `master.command` or `slave.command` instead in order to override the image entrypoint, or `master.extraFlags` to pass additional flags to `redis-server`.
+- `primary.args` and `replica.args` are removed. Use `primary.command` or `replica.command` instead in order to override the image entrypoint, or `primary.extraFlags` to pass additional flags to `redis-server`.
 - `disableCommands` is now interpreted as an array of strings instead of a string of comma separated values.
-- `master.persistence.path` now defaults to `/data`.
+- `primary.persistence.path` now defaults to `/data`.
 
 ### 4.0.0
 
@@ -499,11 +499,11 @@ Finally, it fixes https://github.com/helm/charts/issues/7803 by removing mutable
 
 In order to upgrade, delete the Redis StatefulSet before upgrading:
 ```bash
-$ kubectl delete statefulsets.apps --cascade=false my-release-redis-master
+$ kubectl delete statefulsets.apps --cascade=false my-release-redis-primary
 ```
-And edit the Redis slave (and metrics if enabled) deployment:
+And edit the Redis replica (and metrics if enabled) deployment:
 ```bash
-kubectl patch deployments my-release-redis-slave --type=json -p='[{"op": "remove", "path": "/spec/selector/matchLabels/chart"}]'
+kubectl patch deployments my-release-redis-replica --type=json -p='[{"op": "remove", "path": "/spec/selector/matchLabels/chart"}]'
 kubectl patch deployments my-release-redis-metrics --type=json -p='[{"op": "remove", "path": "/spec/selector/matchLabels/chart"}]'
 ```
 
@@ -513,6 +513,6 @@ kubectl patch deployments my-release-redis-metrics --type=json -p='[{"op": "remo
 The metrics exporter has been changed from a separate deployment to a sidecar container, due to the latest changes in the Redis exporter code. Check the [official page](https://github.com/oliver006/redis_exporter/) for more information. The metrics container image was changed from oliver006/redis_exporter to bitnami/redis-exporter (Bitnami's maintained package of oliver006/redis_exporter).
 
 ### 7.0.0
-In order to improve the performance in case of slave failure, we added persistence to the read-only slaves. That means that we moved from Deployment to StatefulSets. This should not affect upgrades from previous versions of the chart, as the deployments did not contain any persistence at all.
+In order to improve the performance in case of replica failure, we added persistence to the read-only replicas. That means that we moved from Deployment to StatefulSets. This should not affect upgrades from previous versions of the chart, as the deployments did not contain any persistence at all.
 
-This version also allows enabling Redis Sentinel containers inside of the Redis Pods (feature disabled by default). In case the master crashes, a new Redis node will be elected as master. In order to query the current master (no redis master service is exposed), you need to query first the Sentinel cluster. Find more information [in this section](#master-slave-with-sentinel).
+This version also allows enabling Redis Sentinel containers inside of the Redis Pods (feature disabled by default). In case the primary crashes, a new Redis node will be elected as primary. In order to query the current primary (no redis primary service is exposed), you need to query first the Sentinel cluster. Find more information [in this section](#primary-replica-with-sentinel).

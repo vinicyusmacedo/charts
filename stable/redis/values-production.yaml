@@ -42,9 +42,9 @@ image:
 ## Cluster settings
 cluster:
   enabled: true
-  slaveCount: 3
+  replicaCount: 3
 
-## Use redis sentinel in the redis pod. This will disable the master and slave services and
+## Use redis sentinel in the redis pod. This will disable the primary and replica services and
 ## create one redis service with ports to the sentinel and the redis instances
 sentinel:
   enabled: false
@@ -72,7 +72,7 @@ sentinel:
     ##
     # pullSecrets:
     #   - myRegistryKeySecretName
-  masterSet: mymaster
+  primarySet: myprimary
   initialCheckTimeout: 5
   quorum: 2
   downAfterMilliseconds: 60000
@@ -184,7 +184,7 @@ securityContext:
   enabled: true
   fsGroup: 1001
   runAsUser: 1001
-  ## sysctl settings for master and slave pods
+  ## sysctl settings for primary and replica pods
   ##
   ## Uncomment the setting below to increase the net.core.somaxconn value
   ##
@@ -194,7 +194,7 @@ securityContext:
 
 ## Use password authentication
 usePassword: true
-## Redis password (both master and slave)
+## Redis password (both primary and replica)
 ## Defaults to a random 10-character alphanumeric string if not set and usePassword is true
 ## ref: https://github.com/bitnami/bitnami-docker-redis#setting-the-server-password-on-first-run
 ##
@@ -221,13 +221,13 @@ redisPort: 6379
 ##
 ## Redis Master parameters
 ##
-master:
+primary:
   ## Redis command arguments
   ##
   ## Can be used to specify command line arguments, for example:
   ##
   command: "/run.sh"
-  ## Additional Redis configuration for the master nodes
+  ## Additional Redis configuration for the primary nodes
   ## ref: https://redis.io/topics/config
   ##
   configmap:
@@ -356,7 +356,7 @@ master:
 ## Note: service.type is a mandatory parameter
 ## The rest of the parameters are either optional or, if undefined, will inherit those declared in Redis Master
 ##
-slave:
+replica:
   ## Slave Service properties
   service:
     ## Redis Slave Service type
@@ -377,12 +377,12 @@ slave:
     loadBalancerIP:
     # loadBalancerSourceRanges: ["10.0.0.0/8"]
 
-  ## Redis slave port
+  ## Redis replica port
   port: 6379
   ## Can be used to specify command line arguments, for example:
   ##
   command: "/run.sh"
-  ## Additional Redis configuration for the slave nodes
+  ## Additional Redis configuration for the replica nodes
   ## ref: https://redis.io/topics/config
   ##
   configmap:
@@ -415,13 +415,13 @@ slave:
     successThreshold: 1
     failureThreshold: 5
 
-  ## Redis slave Resource
+  ## Redis replica Resource
   # resources:
   #   requests:
   #     memory: 256Mi
   #     cpu: 100m
 
-  ## Redis slave selectors and tolerations for pod assignment
+  ## Redis replica selectors and tolerations for pod assignment
   # nodeSelector: {"beta.kubernetes.io/arch": "amd64"}
   # tolerations: []
 
@@ -430,11 +430,11 @@ slave:
   ##
   # schedulerName:
 
-  ## Redis slave pod Annotation and Labels
+  ## Redis replica pod Annotation and Labels
   podLabels: {}
   podAnnotations: {}
 
-  ## Redis slave pod priorityClassName
+  ## Redis replica pod priorityClassName
   # priorityClassName: {}
 
   ## Enable persistence using Persistent Volume Claims
@@ -512,9 +512,9 @@ metrics:
     # namespace: monitoring
     # fallback to the prometheus default unless specified
     # interval: 10s
-    ## Defaults to what's used if you follow CoreOS [Prometheus Install Instructions](https://github.com/helm/charts/tree/master/stable/prometheus-operator#tldr)
-    ## [Prometheus Selector Label](https://github.com/helm/charts/tree/master/stable/prometheus-operator#prometheus-operator-1)
-    ## [Kube Prometheus Selector Label](https://github.com/helm/charts/tree/master/stable/prometheus-operator#exporters)
+    ## Defaults to what's used if you follow CoreOS [Prometheus Install Instructions](https://github.com/helm/charts/tree/primary/stable/prometheus-operator#tldr)
+    ## [Prometheus Selector Label](https://github.com/helm/charts/tree/primary/stable/prometheus-operator#prometheus-operator-1)
+    ## [Kube Prometheus Selector Label](https://github.com/helm/charts/tree/primary/stable/prometheus-operator#exporters)
     selector:
       prometheus: kube-prometheus
 

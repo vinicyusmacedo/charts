@@ -78,11 +78,11 @@ data:
         PORT=$1;
         FOUND_PORT=0;
       } else if (FOUND_RUNID==1) {
-        printf "\nsentinel known-sentinel {{ .Values.sentinel.masterSet }} %s %s %s", IP, PORT, $0; FOUND_RUNID=0;
+        printf "\nsentinel known-sentinel {{ .Values.sentinel.primarySet }} %s %s %s", IP, PORT, $0; FOUND_RUNID=0;
       }
     }
 {{- end }}
-  ping_readiness_master.sh: |-
+  ping_readiness_primary.sh: |-
 {{- if .Values.usePasswordFile }}
     password_aux=`cat ${REDIS_MASTER_PASSWORD_FILE}`
     export REDIS_MASTER_PASSWORD=$password_aux
@@ -101,7 +101,7 @@ data:
       echo "$response"
       exit 1
     fi
-  ping_liveness_master.sh: |-
+  ping_liveness_primary.sh: |-
 {{- if .Values.usePasswordFile }}
     password_aux=`cat ${REDIS_MASTER_PASSWORD_FILE}`
     export REDIS_MASTER_PASSWORD=$password_aux
@@ -120,15 +120,15 @@ data:
       echo "$response"
       exit 1
     fi
-  ping_readiness_local_and_master.sh: |-
+  ping_readiness_local_and_primary.sh: |-
     script_dir="$(dirname "$0")"
     exit_status=0
     "$script_dir/ping_readiness_local.sh" $1 || exit_status=$?
-    "$script_dir/ping_readiness_master.sh" $1 || exit_status=$?
+    "$script_dir/ping_readiness_primary.sh" $1 || exit_status=$?
     exit $exit_status
-  ping_liveness_local_and_master.sh: |-
+  ping_liveness_local_and_primary.sh: |-
     script_dir="$(dirname "$0")"
     exit_status=0
     "$script_dir/ping_liveness_local.sh" $1 || exit_status=$?
-    "$script_dir/ping_liveness_master.sh" $1 || exit_status=$?
+    "$script_dir/ping_liveness_primary.sh" $1 || exit_status=$?
     exit $exit_status

@@ -25,10 +25,10 @@
         "enabled": {
           "type": "boolean",
           "form": true,
-          "title": "Enable master-slave",
-          "description": "Enable master-slave architecture"
+          "title": "Enable primary-replica",
+          "description": "Enable primary-replica architecture"
         },
-        "slaveCount": {
+        "replicaCount": {
           "type": "integer",
           "title": "Slave Replicas",
           "form": true,
@@ -39,14 +39,14 @@
         }
       }
     },
-    "master": {
+    "primary": {
       "type": "object",
       "title": "Master replicas settings",
       "form": true,
       "properties": {
         "persistence": {
           "type": "object",
-          "title": "Persistence for master replicas",
+          "title": "Persistence for primary replicas",
           "form": true,
           "properties": {
             "enabled": {
@@ -65,7 +65,7 @@
               "sliderUnit": "Gi",
               "hidden": {
                 "condition": false,
-                "value": "master.persistence.enabled"
+                "value": "primary.persistence.enabled"
               }
             },
             "matchLabels": {
@@ -80,7 +80,7 @@
         }
       }
     },
-    "slave": {
+    "replica": {
       "type": "object",
       "title": "Slave replicas settings",
       "form": true,
@@ -91,7 +91,7 @@
       "properties": {
         "persistence": {
           "type": "object",
-          "title": "Persistence for slave replicas",
+          "title": "Persistence for replica replicas",
           "form": true,
           "properties": {
             "enabled": {
@@ -110,7 +110,7 @@
               "sliderUnit": "Gi",
               "hidden": {
                 "condition": false,
-                "value": "slave.persistence.enabled"
+                "value": "replica.persistence.enabled"
               }
             },
             "matchLabels": {
